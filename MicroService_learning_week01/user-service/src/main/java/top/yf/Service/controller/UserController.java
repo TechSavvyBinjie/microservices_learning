@@ -11,8 +11,8 @@ public class UserController {
 @Resource
 private RestTemplate restTemplate;
     @GetMapping("/user")
-    public String getUser(@RequestParam String question) {
-        String userServiceUrl="http://localhost:8084/ai?str="+question;
+    public String getUser() {
+        String userServiceUrl="http://localhost:3000/test";
         String answer = restTemplate.getForObject(userServiceUrl, String.class);
         return answer;
     }
