@@ -8,23 +8,11 @@ var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
 const testRouter = require("./routes/test");
 
-const { NacosNamingClient } = require("nacos");
-const { address } = require("ip");
-const logger1 = console;
-// 动态获取本机 IP 地址
-const ipAddr = address();
-const port = 3001; // 当前应用的端口号
-const username = "nacos";
-const password = "nacos";
-const providerServiceName = "edsp-component-app1"; // 服务名称
-const nacosServerAddress = "localhost:8848"; // Nacos 服务地址
-
 var app = express();
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "jade");
-
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -50,35 +38,24 @@ app.use(function (err, req, res, next) {
   res.status(err.status || 500);
   res.render("error");
 });
-const client = new NacosNamingClient({
-  logger: logger1,
-  serverList: nacosServerAddress,
-  username: username,
-  password: password,
-  namespace: "public",
-});
-console.log("[Nacos] 注册Nacos服务");
-async () => {
-  const allinstance = await client.getAllInstances();
-  console.log("[Nacos]----allinstance----", allinstance);
-};
-(async () => {
-  try {
-    await client.ready();
-    // 注册服务和实例
-    await client.registerInstance(providerServiceName, {
-      ip: ipAddr,
-      port,
-    });
-    // 这里也可以传入group，不传默认就是 DEFAULT_GROUP
-    // const groupName = 'nodejs';
-    // await client.registerInstance(providerServiceName, {
-    // ip: ipAddr,
-    // port
-    // }, groupName);
-    console.log(`[Nacos] Nacos服务注册实例成功: ${ipAddr}:${port}`);
-  } catch (err) {
-    console.log("[Nacos] Nacos服务注册实例失败: " + err.toString());
-  }
-})();
+
 module.exports = app;
+// 导出启动服务器的异步函数
+module.exports.startServer = async function () {
+  const registerService = require("./service-discovery");
+
+  try {
+    // 调用 registerService 注册服务
+    await registerService();
+    console.log("服务已成功注册到 Nacos");
+
+    // 服务注册成功后，启动 Express 服务器
+    const PORT = process.env.PORT || 3001;
+    app.listen(PORT, () => {
+      console.log(`Express 服务器运行在 http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error("服务注册失败：", error);
+    process.exit(1); // 如果注册失败，退出进程
+  }
+};

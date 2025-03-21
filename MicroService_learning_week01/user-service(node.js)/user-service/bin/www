@@ -7,7 +7,10 @@
 var app = require("../app");
 var debug = require("debug")("user-service:server");
 var http = require("http");
-
+app.startServer().catch((err) => {
+  console.error("启动服务器失败：", err);
+  process.exit(1);
+});
 /**
  * Get port from environment and store in Express.
  */
